@@ -31,7 +31,7 @@ const getCart = async (req: Request, res: Response, next: NextFunction) => {
 
 const removeFromCart = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const cart = await cartService.removeFromCart(req.user!.id, req.params.mealId);
+        const cart = await cartService.removeFromCart(req.user!.id, req.params.mealId as string);
 
         res.status(200).json({
             success: true,

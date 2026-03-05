@@ -32,7 +32,7 @@ const getAllCategories = async (req: Request, res: Response, next: NextFunction)
 
 const updateCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const category = await categoryService.updateCategory(req.params.id, req.body);
+        const category = await categoryService.updateCategory(req.params.id as string, req.body);
 
         res.status(200).json({
             success: true,
@@ -46,7 +46,7 @@ const updateCategory = async (req: Request, res: Response, next: NextFunction) =
 
 const deleteCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await categoryService.deleteCategory(req.params.id);
+        await categoryService.deleteCategory(req.params.id as string);
 
         res.status(200).json({
             success: true,
