@@ -5,6 +5,7 @@ import { auth } from "./lib/auth";
 import errorHandler from "./middleware/globalErrorHandler";
 import { notFound } from "./middleware/notFound";
 import { userRouter } from "./modules/user/user.router";
+import { providerRouter } from "./modules/provider/provider.router";
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 
 app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use("/api/users", userRouter);
+app.use("/api/providers", providerRouter);
 app.get("/", (req, res) => {
     res.send("Hello World");
 });
