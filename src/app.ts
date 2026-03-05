@@ -6,6 +6,8 @@ import errorHandler from "./middleware/globalErrorHandler";
 import { notFound } from "./middleware/notFound";
 import { userRouter } from "./modules/user/user.router";
 import { providerRouter } from "./modules/provider/provider.router";
+import { categoryRouter } from "./modules/category/category.router";
+import { mealRouter, providerMealRouter } from "./modules/meal/meal.router";
 
 const app = express();
 
@@ -18,6 +20,9 @@ app.use(express.json());
 app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use("/api/users", userRouter);
 app.use("/api/providers", providerRouter);
+app.use("/api/categories", categoryRouter);
+app.use("/api/meals", mealRouter);
+app.use("/api/provider/meals", providerMealRouter);
 app.get("/", (req, res) => {
     res.send("Hello World");
 });
