@@ -32,7 +32,7 @@ const getCustomerOrders = async (req: Request, res: Response, next: NextFunction
 
 const getOrderById = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const order = await orderService.getOrderById(req.user!.id, req.params.id);
+        const order = await orderService.getOrderById(req.user!.id, req.params.id as string);
 
         res.status(200).json({
             success: true,
