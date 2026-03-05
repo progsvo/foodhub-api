@@ -23,3 +23,21 @@ export const getOrdersQuerySchema = yup.object({
 export const orderParamsSchema = yup.object({
     id: yup.string().required("Order ID is required"),
 });
+
+export const getProviderOrdersQuerySchema = yup.object({
+    page: yup.number().optional().integer().min(1),
+    limit: yup.number().optional().integer().min(1).max(100),
+    sortBy: yup.string().optional().oneOf(["createdAt"]),
+    sortOrder: yup.string().optional().oneOf(["asc", "desc"]),
+    status: yup
+        .string()
+        .optional()
+        .oneOf(["PLACED", "PREPARING", "READY", "DELIVERED", "CANCELLED"]),
+});
+
+export const updateOrderStatusSchema = yup.object({
+    status: yup
+        .string()
+        .required("Status is required")
+        .oneOf(["PREPARING", "READY", "DELIVERED", "CANCELLED"]),
+});

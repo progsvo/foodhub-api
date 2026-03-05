@@ -44,8 +44,39 @@ const getOrderById = async (req: Request, res: Response, next: NextFunction) => 
     }
 };
 
+const getProviderOrders = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const result = await orderService.getProviderOrders(req.user!.id, req.query);
+
+        res.status(200).json({
+            success: true,
+            message: "Provider orders fetched successfully",
+            data: result.data,
+            meta: result.meta,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const updateOrderStatus = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const order = await orderService.updateOrderStatus(req.user!.id, req.params.id as string, req.body.status);
+
+        res.status(200).json({
+            success: true,
+            message: "Order status updated successfully",
+            data: order,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const orderController = {
     createOrder,
     getCustomerOrders,
     getOrderById,
+    getProviderOrders,
+    updateOrderStatus,
 };

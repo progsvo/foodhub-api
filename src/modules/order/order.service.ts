@@ -127,6 +127,89 @@ const getCustomerOrders = async (userId: string, query: IGetOrdersQuery) => {
     };
 };
 
+const validTransitions: Record<string, string[]> = {
+    PLACED: ["PREPARING", "CANCELLED"],
+    PREPARING: ["READY", "CANCELLED"],
+    READY: ["DELIVERED"],
+    DELIVERED: [],
+    CANCELLED: [],
+};
+
+const getProviderProfile = async (userId: string) => {
+    const profile = await prisma.providerProfile.findUnique({ where: { userId } });
+
+    if (!profile) {
+        throw Object.assign(new Error("Provider profile not found"), { statusCode: 404 });
+    }
+
+    return profile;
+};
+
+const getProviderOrders = async (userId: string, query: IGetOrdersQuery) => {
+    const profile = await getProviderProfile(userId);
+    const { page, limit, skip, sortBy, sortOrder } = paginationSortingHelper(query);
+
+    const where: any = { providerId: profile.id };
+
+    if (query.status) {
+        where.status = query.status;
+    }
+
+    const [data, total] = await Promise.all([
+        prisma.order.findMany({
+            where,
+            include: {
+                user: { select: { id: true, name: true, image: true } },
+                items: {
+                    include: {
+                        meal: { select: { id: true, image: true } },
+                    },
+                },
+                _count: { select: { items: true } },
+            },
+            skip,
+            take: limit,
+            orderBy: { [sortBy]: sortOrder },
+        }),
+        prisma.order.count({ where }),
+    ]);
+
+    return {
+        data,
+        meta: { page, limit, total },
+    };
+};
+
+const updateOrderStatus = async (userId: string, orderId: string, status: string) => {
+    const profile = await getProviderProfile(userId);
+
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+
+    if (!order) {
+        throw Object.assign(new Error("Order not found"), { statusCode: 404 });
+    }
+
+    if (order.providerId !== profile.id) {
+        throw Object.assign(new Error("You don't have permission to update this order"), { statusCode: 403 });
+    }
+
+    const allowed = validTransitions[order.status];
+    if (!allowed || !allowed.includes(status)) {
+        throw Object.assign(
+            new Error(`Cannot transition from ${order.status} to ${status}`),
+            { statusCode: 400 },
+        );
+    }
+
+    const updated = await prisma.order.update({
+        where: { id: orderId },
+        data: { status: status as any },
+        include: orderInclude,
+    });
+
+    return updated;
+};
+
 const getOrderById = async (userId: string, orderId: string) => {
     const order = await prisma.order.findUnique({
         where: { id: orderId },
@@ -148,4 +231,6 @@ export const orderService = {
     createOrder,
     getCustomerOrders,
     getOrderById,
+    getProviderOrders,
+    updateOrderStatus,
 };

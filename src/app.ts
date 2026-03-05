@@ -9,8 +9,9 @@ import { providerRouter } from "./modules/provider/provider.router";
 import { categoryRouter } from "./modules/category/category.router";
 import { mealRouter, providerMealRouter } from "./modules/meal/meal.router";
 import { cartRouter } from "./modules/cart/cart.router";
-import { orderRouter } from "./modules/order/order.router";
+import { orderRouter, providerOrderRouter } from "./modules/order/order.router";
 import { reviewRouter } from "./modules/review/review.router";
+import { adminRouter } from "./modules/admin/admin.router";
 
 const app = express();
 
@@ -28,7 +29,9 @@ app.use("/api/meals", mealRouter);
 app.use("/api/provider/meals", providerMealRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/orders", orderRouter);
+app.use("/api/provider/orders", providerOrderRouter);
 app.use("/api/reviews", reviewRouter);
+app.use("/api/admin", adminRouter);
 app.get("/", (req, res) => {
     res.send("Hello World");
 });
