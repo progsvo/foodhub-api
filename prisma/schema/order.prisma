@@ -1,0 +1,42 @@
+enum OrderStatus {
+    PLACED
+    PREPARING
+    READY
+    DELIVERED
+    CANCELLED
+}
+
+model Order {
+    id              String      @id @default(cuid())
+    userId          String
+    user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+    providerId      String
+    provider        ProviderProfile @relation(fields: [providerId], references: [id])
+    status          OrderStatus @default(PLACED)
+    deliveryAddress String
+    totalAmount     Float
+    createdAt       DateTime    @default(now())
+    updatedAt       DateTime    @updatedAt
+
+    items OrderItem[]
+
+    @@index([userId])
+    @@index([providerId])
+    @@index([status])
+    @@map("order")
+}
+
+model OrderItem {
+    id        String @id @default(cuid())
+    orderId   String
+    order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+    mealId    String
+    meal      Meal   @relation(fields: [mealId], references: [id])
+    mealName  String
+    mealPrice Float
+    quantity  Int
+
+    @@index([orderId])
+    @@index([mealId])
+    @@map("order_item")
+}

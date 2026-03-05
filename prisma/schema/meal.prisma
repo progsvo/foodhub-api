@@ -1,0 +1,24 @@
+model Meal {
+    id                String   @id @default(cuid())
+    name              String
+    description       String?
+    price             Float
+    image             String?
+    cuisine           String?
+    dietaryPreference String?
+    isAvailable       Boolean  @default(true)
+    providerId        String
+    provider          ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
+    categoryId        String
+    category          Category        @relation(fields: [categoryId], references: [id])
+    createdAt         DateTime @default(now())
+    updatedAt         DateTime @updatedAt
+
+    cartItems  CartItem[]
+    orderItems OrderItem[]
+    reviews    Review[]
+
+    @@index([providerId])
+    @@index([categoryId])
+    @@map("meal")
+}
