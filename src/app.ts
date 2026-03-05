@@ -8,6 +8,7 @@ import { userRouter } from "./modules/user/user.router";
 import { providerRouter } from "./modules/provider/provider.router";
 import { categoryRouter } from "./modules/category/category.router";
 import { mealRouter, providerMealRouter } from "./modules/meal/meal.router";
+import { cartRouter } from "./modules/cart/cart.router";
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use("/api/providers", providerRouter);
 app.use("/api/categories", categoryRouter);
 app.use("/api/meals", mealRouter);
 app.use("/api/provider/meals", providerMealRouter);
+app.use("/api/cart", cartRouter);
 app.get("/", (req, res) => {
     res.send("Hello World");
 });
