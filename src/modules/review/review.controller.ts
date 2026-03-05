@@ -17,7 +17,7 @@ const createReview = async (req: Request, res: Response, next: NextFunction) => 
 
 const getMealReviews = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await reviewService.getMealReviews(req.params.mealId, req.query);
+        const result = await reviewService.getMealReviews(req.params.mealId as string, req.query);
 
         res.status(200).json({
             success: true,
