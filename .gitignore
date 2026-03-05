@@ -10,7 +10,7 @@ pnpm-debug.log*
 
 # Environment variables
 .env
-.env.*
+.env.local
 
 # Runtime files
 pids
@@ -40,3 +40,4 @@ temp
 *.tsbuildinfo
 
 /src/generated/prisma
+generated
