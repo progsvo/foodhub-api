@@ -75,13 +75,22 @@ Make sure you have installed on your local machine:
 
    ```bash
    npx prisma generate
+   npx prisma migrate dev
+   ```
+
+   or
+
+   ```bash
+   npx prisma generate
    npx prisma db push
    ```
 
 4. **Start the Development Server:**
+
    ```bash
    npm run dev
    ```
+
    The API will typically be accessible at `http://localhost:3000` (or as configured in your `.env`).
 
 ---

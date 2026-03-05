@@ -22,6 +22,7 @@ pids
 prisma/*.db
 prisma/*.db-journal
 node_modules/.prisma
+prisma/migrations/
 
 # macOS
 .DS_Store
