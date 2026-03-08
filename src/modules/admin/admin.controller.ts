@@ -3,7 +3,7 @@ import { adminService } from "./admin.service";
 
 const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await adminService.getAllUsers(req.query);
+        const result = await adminService.getAllUsers((req as any).validatedQuery ?? req.query);
 
         res.status(200).json({
             success: true,
@@ -35,7 +35,7 @@ const updateUserStatus = async (req: Request, res: Response, next: NextFunction)
 
 const getAllOrders = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await adminService.getAllOrders(req.query);
+        const result = await adminService.getAllOrders((req as any).validatedQuery ?? req.query);
 
         res.status(200).json({
             success: true,

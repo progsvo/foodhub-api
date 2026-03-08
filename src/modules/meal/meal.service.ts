@@ -112,7 +112,11 @@ const deleteMeal = async (userId: string, mealId: string) => {
 const getAllMeals = async (query: IGetMealsQuery) => {
     const { page, limit, skip, sortBy, sortOrder } = paginationSortingHelper(query);
 
-    const where: any = { isAvailable: true };
+    const where: any = {};
+    // When providerId is set (provider viewing own meals), show all meals. Otherwise filter by isAvailable.
+    if (!query.providerId) {
+        where.isAvailable = true;
+    }
 
     if (query.search) {
         where.name = { contains: query.search, mode: "insensitive" };

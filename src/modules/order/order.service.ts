@@ -210,7 +210,7 @@ const updateOrderStatus = async (userId: string, orderId: string, status: string
     return updated;
 };
 
-const getOrderById = async (userId: string, orderId: string) => {
+const getOrderById = async (userId: string, orderId: string, role?: string) => {
     const order = await prisma.order.findUnique({
         where: { id: orderId },
         include: orderInclude,
@@ -220,7 +220,38 @@ const getOrderById = async (userId: string, orderId: string) => {
         throw Object.assign(new Error("Order not found"), { statusCode: 404 });
     }
 
-    if (order.userId !== userId) {
+    if (role !== "ADMIN" && order.userId !== userId) {
+        throw Object.assign(new Error("You don't have permission to view this order"), { statusCode: 403 });
+    }
+
+    return order;
+};
+
+const getProviderOrderById = async (userId: string, orderId: string) => {
+    const profile = await getProviderProfile(userId);
+
+    const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+            items: {
+                include: {
+                    meal: { select: { id: true, image: true } },
+                },
+            },
+            user: { select: { id: true, name: true, image: true } },
+            provider: {
+                include: {
+                    user: { select: { id: true, name: true, image: true } },
+                },
+            },
+        },
+    });
+
+    if (!order) {
+        throw Object.assign(new Error("Order not found"), { statusCode: 404 });
+    }
+
+    if (order.providerId !== profile.id) {
         throw Object.assign(new Error("You don't have permission to view this order"), { statusCode: 403 });
     }
 
@@ -232,5 +263,6 @@ export const orderService = {
     getCustomerOrders,
     getOrderById,
     getProviderOrders,
+    getProviderOrderById,
     updateOrderStatus,
 };

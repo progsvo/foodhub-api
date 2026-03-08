@@ -105,7 +105,13 @@ const getProviderById = async (id: string) => {
             user: { select: userSafeSelect },
             meals: {
                 where: { isAvailable: true },
-                include: { category: true },
+                include: {
+                    category: true,
+                    reviews: {
+                        include: { user: { select: userSafeSelect } },
+                        orderBy: { createdAt: "desc" },
+                    },
+                },
                 orderBy: { createdAt: "desc" },
             },
         },

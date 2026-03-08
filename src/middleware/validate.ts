@@ -25,7 +25,7 @@ const validate = (schemas: ValidationSchemas) => {
             }
 
             if (schemas.query) {
-                req.query = await schemas.query.validate(req.query, {
+                (req as any).validatedQuery = await schemas.query.validate(req.query, {
                     abortEarly: false,
                     stripUnknown: true,
                 });

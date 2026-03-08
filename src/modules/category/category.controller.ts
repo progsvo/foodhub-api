@@ -17,7 +17,7 @@ const createCategory = async (req: Request, res: Response, next: NextFunction) =
 
 const getAllCategories = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await categoryService.getAllCategories(req.query);
+        const result = await categoryService.getAllCategories((req as any).validatedQuery ?? req.query);
 
         res.status(200).json({
             success: true,

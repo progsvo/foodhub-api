@@ -17,7 +17,7 @@ const createOrder = async (req: Request, res: Response, next: NextFunction) => {
 
 const getCustomerOrders = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await orderService.getCustomerOrders(req.user!.id, req.query);
+        const result = await orderService.getCustomerOrders(req.user!.id, (req as any).validatedQuery ?? req.query);
 
         res.status(200).json({
             success: true,
@@ -32,7 +32,7 @@ const getCustomerOrders = async (req: Request, res: Response, next: NextFunction
 
 const getOrderById = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const order = await orderService.getOrderById(req.user!.id, req.params.id as string);
+        const order = await orderService.getOrderById(req.user!.id, req.params.id as string, req.user!.role);
 
         res.status(200).json({
             success: true,
@@ -46,13 +46,27 @@ const getOrderById = async (req: Request, res: Response, next: NextFunction) => 
 
 const getProviderOrders = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await orderService.getProviderOrders(req.user!.id, req.query);
+        const result = await orderService.getProviderOrders(req.user!.id, (req as any).validatedQuery ?? req.query);
 
         res.status(200).json({
             success: true,
             message: "Provider orders fetched successfully",
             data: result.data,
             meta: result.meta,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const getProviderOrderById = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const order = await orderService.getProviderOrderById(req.user!.id, req.params.id as string);
+
+        res.status(200).json({
+            success: true,
+            message: "Order fetched successfully",
+            data: order,
         });
     } catch (error) {
         next(error);
@@ -78,5 +92,6 @@ export const orderController = {
     getCustomerOrders,
     getOrderById,
     getProviderOrders,
+    getProviderOrderById,
     updateOrderStatus,
 };

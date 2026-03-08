@@ -15,9 +15,26 @@ import { adminRouter } from "./modules/admin/admin.router";
 
 const app = express();
 
+const allowedOrigins = [
+    process.env.APP_URL,
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+].filter(Boolean) as string[];
+
+// In development, also allow any localhost/127.0.0.1 origin
+const isDev = process.env.NODE_ENV !== "production";
+const originFn = (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => {
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    if (isDev && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return cb(null, true);
+    cb(null, false);
+};
+
 app.use(cors({
-    origin: process.env.APP_URL || "http://localhost:3000",
+    origin: originFn,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
 }));
 app.use(express.json());
 

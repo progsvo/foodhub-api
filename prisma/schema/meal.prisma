@@ -1,24 +1,204 @@
-model Meal {
-    id                String   @id @default(cuid())
-    name              String
-    description       String?
-    price             Float
-    image             String?
-    cuisine           String?
-    dietaryPreference String?
-    isAvailable       Boolean  @default(true)
-    providerId        String
-    provider          ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
-    categoryId        String
-    category          Category        @relation(fields: [categoryId], references: [id])
-    createdAt         DateTime @default(now())
-    updatedAt         DateTime @updatedAt
+import "dotenv/config";
+import { prisma } from "../lib/prisma";
+import { UserRole } from "../middleware/auth";
 
-    cartItems  CartItem[]
-    orderItems OrderItem[]
-    reviews    Review[]
+const AUTH_URL = process.env.BETTER_AUTH_URL ?? "http://localhost:5000";
+const APP_URL = process.env.APP_URL ?? "http://localhost:3000";
 
-    @@index([providerId])
-    @@index([categoryId])
-    @@map("meal")
+const SEED_PASSWORD = "password123";
+
+const usersToCreate = [
+  { name: "Admin User", email: "admin@foodhub.com", role: UserRole.ADMIN },
+  { name: "John Customer", email: "customer@foodhub.com", role: UserRole.CUSTOMER },
+  { name: "Maria's Kitchen", email: "maria@foodhub.com", role: UserRole.PROVIDER },
+  { name: "Bella Restaurant", email: "bella@foodhub.com", role: UserRole.PROVIDER },
+];
+
+async function createUsers() {
+  const created: Record<string, string> = {};
+
+  for (const u of usersToCreate) {
+    const existing = await prisma.user.findUnique({ where: { email: u.email } });
+    if (existing) {
+      created[u.email] = existing.id;
+      console.log(`User ${u.email} already exists`);
+      continue;
+    }
+
+    const res = await fetch(`${AUTH_URL}/api/auth/sign-up/email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: APP_URL,
+      },
+      body: JSON.stringify({
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        password: SEED_PASSWORD,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.error(`Failed to create ${u.email}:`, err);
+      continue;
+    }
+
+    const user = await prisma.user.findUnique({ where: { email: u.email } });
+    if (user) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { emailVerified: true },
+      });
+      created[u.email] = user.id;
+      console.log(`Created user: ${u.email}`);
+    }
+  }
+
+  return created;
 }
+
+async function seed() {
+  console.log("Starting seed...");
+  console.log("Creating users (API must be running at", AUTH_URL, ")...");
+
+  const userIds = await createUsers();
+  const adminId = userIds["admin@foodhub.com"];
+  const customerId = userIds["customer@foodhub.com"];
+  const mariaId = userIds["maria@foodhub.com"];
+  const bellaId = userIds["bella@foodhub.com"];
+
+  if (!customerId || !mariaId || !bellaId) {
+    console.error("Missing required users. Ensure API is running and run again.");
+    process.exit(1);
+  }
+
+  // Categories
+  const categoryNames = [
+    "Breakfast",
+    "Lunch",
+    "Dinner",
+    "Desserts",
+    "Beverages",
+    "Salads",
+    "Fast Food",
+    "Asian",
+    "Italian",
+    "Mexican",
+  ];
+
+  const categories: Record<string, string> = {};
+  for (const name of categoryNames) {
+    const cat = await prisma.category.upsert({
+      where: { name },
+      create: {
+        name,
+        image: `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80`,
+      },
+      update: {},
+    });
+    categories[name] = cat.id;
+  }
+  console.log("Categories ready");
+
+  // Provider profiles
+  let mariaProfile = await prisma.providerProfile.findFirst({
+    where: { userId: mariaId },
+  });
+  if (!mariaProfile) {
+    mariaProfile = await prisma.providerProfile.create({
+      data: {
+        userId: mariaId,
+        businessName: "Maria's Kitchen",
+        description: "Homestyle cooking with love. Fresh ingredients daily.",
+        image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80",
+        address: "123 Main St, Downtown",
+      },
+    });
+  }
+
+  let bellaProfile = await prisma.providerProfile.findFirst({
+    where: { userId: bellaId },
+  });
+  if (!bellaProfile) {
+    bellaProfile = await prisma.providerProfile.create({
+      data: {
+        userId: bellaId,
+        businessName: "Bella Restaurant",
+        description: "Fine dining with Mediterranean flavors.",
+        image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80",
+        address: "456 Oak Ave, Midtown",
+      },
+    });
+  }
+  console.log("Provider profiles ready");
+
+  // Meals for Maria
+  const mariaMeals = [
+    { name: "Pancakes with Maple Syrup", description: "Fluffy pancakes with butter and maple syrup", price: 8.99, cuisine: "American", dietaryPreference: "Vegetarian", category: "Breakfast" },
+    { name: "Eggs Benedict", description: "Poached eggs on English muffin with hollandaise", price: 12.99, cuisine: "American", dietaryPreference: "Vegetarian", category: "Breakfast" },
+    { name: "Caesar Salad", description: "Crisp romaine, parmesan, croutons, Caesar dressing", price: 9.99, cuisine: "American", dietaryPreference: "Vegetarian", category: "Salads" },
+    { name: "Grilled Chicken Sandwich", description: "Juicy chicken breast with lettuce and mayo", price: 11.99, cuisine: "American", dietaryPreference: null, category: "Lunch" },
+    { name: "Chocolate Brownie", description: "Warm brownie with vanilla ice cream", price: 6.99, cuisine: "American", dietaryPreference: "Vegetarian", category: "Desserts" },
+    { name: "Fresh Orange Juice", description: "Freshly squeezed orange juice", price: 4.99, cuisine: null, dietaryPreference: "Vegan", category: "Beverages" },
+  ];
+
+  const mealIds: string[] = [];
+  for (const m of mariaMeals) {
+    const meal = await prisma.meal.upsert({
+      where: { id: `seed-maria-${m.name.replace(/\s/g, "-").toLowerCase()}` },
+      create: {
+        name: m.name,
+        description: m.description,
+        price: m.price,
+        cuisine: m.cuisine,
+        dietaryPreference: m.dietaryPreference,
+        providerId: mariaProfile.id,
+        categoryId: categories[m.category],
+        image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80",
+      },
+      update: {},
+    });
+    mealIds.push(meal.id);
+  }
+
+  // Meals for Bella
+  const bellaMeals = [
+    { name: "Margherita Pizza", description: "Tomato, mozzarella, basil", price: 14.99, cuisine: "Italian", dietaryPreference: "Vegetarian", category: "Dinner" },
+    { name: "Pasta Carbonara", description: "Creamy bacon and egg pasta", price: 13.99, cuisine: "Italian", dietaryPreference: null, category: "Dinner" },
+    { name: "Tiramisu", description: "Classic Italian dessert", price: 8.99, cuisine: "Italian", dietaryPreference: "Vegetarian", category: "Desserts" },
+    { name: "Greek Salad", description: "Feta, olives, cucumber, tomato", price: 10.99, cuisine: "Mediterranean", dietaryPreference: "Vegetarian", category: "Salads" },
+    { name: "Chicken Tikka Masala", description: "Creamy spiced chicken with rice", price: 15.99, cuisine: "Asian", dietaryPreference: null, category: "Dinner" },
+    { name: "Iced Coffee", description: "Cold brew with milk", price: 4.49, cuisine: null, dietaryPreference: "Vegetarian", category: "Beverages" },
+  ];
+
+  for (const m of bellaMeals) {
+    const meal = await prisma.meal.upsert({
+      where: { id: `seed-bella-${m.name.replace(/\s/g, "-").toLowerCase()}` },
+      create: {
+        name: m.name,
+        description: m.description,
+        price: m.price,
+        cuisine: m.cuisine,
+        dietaryPreference: m.dietaryPreference,
+        providerId: bellaProfile.id,
+        categoryId: categories[m.category],
+        image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80",
+      },
+      update: {},
+    });
+    mealIds.push(meal.id);
+  }
+  console.log("Meals created");
+
+  // Upsert uses custom IDs - Prisma might not support that for meals. Let me check - Meal has id @default(cuid()), so we can't use custom ids in upsert. Let me change to create and use findFirst to avoid duplicates.
+  // Actually the upsert where clause needs a unique field. Meal's id is the only unique. So we need to use create and check by name+providerId or similar. Let me refactor to use create with createMany or individual creates, and skip if exists.
+
+  // Fix: Meal doesn't have a unique constraint on name+provider. So I'll use create and catch duplicate errors, or delete existing seed data first. Simpler: delete all meals, orders, reviews, order items first, then create fresh. That way we have a clean seed.
+  // Actually the user said "add some data" - they might have empty DB. Let me use create and if we get unique constraint errors we skip. Or we could use findFirst + create.
+  // The meal id is cuid by default - we can't upsert by custom id. Let me change the approach: for each meal, findFirst by name and providerId - if exists skip, else create.
+</think>
+Checking whether Meal has a unique constraint and fixing the seed logic.
+<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
+Read

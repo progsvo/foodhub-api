@@ -2,6 +2,8 @@ import { NextFunction, Request, Response } from "express";
 import { Prisma } from "../../generated/prisma/client";
 
 function errorHandler(err: any, req: Request, res: Response, next: NextFunction) {
+    console.error("[API Error]", err);
+
     let statusCode = 500;
     let message = "Internal Server Error";
     let error = err;
@@ -33,7 +35,8 @@ function errorHandler(err: any, req: Request, res: Response, next: NextFunction)
         }
     }
 
-    res.status(statusCode).json({ message, error });
+    const errorPayload = err?.message ? { message: err.message, stack: err.stack } : error;
+    res.status(statusCode).json({ message, error: errorPayload });
 }
 
 export default errorHandler;

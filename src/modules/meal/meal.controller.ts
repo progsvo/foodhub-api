@@ -44,7 +44,7 @@ const deleteMeal = async (req: Request, res: Response, next: NextFunction) => {
 
 const getAllMeals = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await mealService.getAllMeals(req.query);
+        const result = await mealService.getAllMeals((req as any).validatedQuery ?? req.query);
 
         res.status(200).json({
             success: true,

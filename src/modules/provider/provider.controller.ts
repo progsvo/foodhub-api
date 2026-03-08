@@ -31,7 +31,7 @@ const updateProfile = async (req: Request, res: Response, next: NextFunction) =>
 
 const getAllProviders = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await providerService.getAllProviders(req.query);
+        const result = await providerService.getAllProviders((req as any).validatedQuery ?? req.query);
 
         res.status(200).json({
             success: true,

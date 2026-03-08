@@ -4,55 +4,63 @@ import { prisma } from "./prisma";
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-    },
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
 });
 
+const baseURL = process.env.BETTER_AUTH_URL ?? process.env.APP_URL ?? "http://localhost:5000";
+
 export const auth = betterAuth({
-    database: prismaAdapter(prisma, {
-        provider: "postgresql",
-    }),
-    trustedOrigins: [process.env.APP_URL!],
-    user: {
-        additionalFields: {
-            role: {
-                type: "string",
-                defaultValue: "CUSTOMER",
-                required: false,
-            },
-            phone: {
-                type: "string",
-                required: false,
-            },
-            status: {
-                type: "string",
-                defaultValue: "ACTIVE",
-                required: false,
-            },
-        },
+  baseURL,
+  database: prismaAdapter(prisma, {
+    provider: "postgresql",
+  }),
+  trustedOrigins: [
+    process.env.APP_URL,
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+  ].filter(Boolean) as string[],
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        defaultValue: "CUSTOMER",
+        required: false,
+        input: true,
+      },
+      phone: {
+        type: "string",
+        required: false,
+      },
+      status: {
+        type: "string",
+        defaultValue: "ACTIVE",
+        required: false,
+      },
     },
-    emailAndPassword: {
-        enabled: true,
-        autoSignIn: false,
-        requireEmailVerification: true,
-    },
-    emailVerification: {
-        sendOnSignUp: true,
-        autoSignInAfterVerification: true,
-        sendVerificationEmail: async ({ user, url, token }, request) => {
-            try {
-                const verificationUrl = `${process.env.APP_URL}/verify-email?token=${token}`;
-                const info = await transporter.sendMail({
-                    from: '"FoodHub" <noreply@foodhub.com>',
-                    to: user.email,
-                    subject: "Please Verify Your Email",
-                    text: `Please verify your email by clicking the link below: ${verificationUrl}`,
-                    html: `
+  },
+  emailAndPassword: {
+    enabled: true,
+    autoSignIn: false,
+    requireEmailVerification: true,
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url, token }, request) => {
+      try {
+        const verificationUrl = `${process.env.APP_URL}/verify-email?token=${token}`;
+        const info = await transporter.sendMail({
+          from: '"FoodHub" <noreply@foodhub.com>',
+          to: user.email,
+          subject: "Please Verify Your Email",
+          text: `Please verify your email by clicking the link below: ${verificationUrl}`,
+          html: `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -159,20 +167,20 @@ export const auth = betterAuth({
 </body>
 </html>
                     `,
-                });
-                console.log("Verification email sent:", info.messageId);
-            } catch (error) {
-                console.error("Error sending verification email:", error);
-                throw new Error("Failed to send verification email");
-            }
-        },
+        });
+        console.log("Verification email sent:", info.messageId);
+      } catch (error) {
+        console.error("Error sending verification email:", error);
+        throw new Error("Failed to send verification email");
+      }
     },
-    socialProviders: {
-        google: {
-            prompt: "select_account consent",
-            accessType: "offline",
-            clientId: process.env.GOOGLE_CLIENT_ID as string,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-        },
+  },
+  socialProviders: {
+    google: {
+      prompt: "select_account consent",
+      accessType: "offline",
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     },
+  },
 });

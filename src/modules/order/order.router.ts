@@ -8,11 +8,12 @@ const customerRouter = express.Router();
 
 customerRouter.post("/", auth(UserRole.CUSTOMER), validate({ body: createOrderSchema }), orderController.createOrder);
 customerRouter.get("/", auth(UserRole.CUSTOMER), validate({ query: getOrdersQuerySchema }), orderController.getCustomerOrders);
-customerRouter.get("/:id", auth(UserRole.CUSTOMER), validate({ params: orderParamsSchema }), orderController.getOrderById);
+customerRouter.get("/:id", auth(UserRole.CUSTOMER, UserRole.ADMIN), validate({ params: orderParamsSchema }), orderController.getOrderById);
 
 const providerRouter = express.Router();
 
 providerRouter.get("/", auth(UserRole.PROVIDER), validate({ query: getProviderOrdersQuerySchema }), orderController.getProviderOrders);
+providerRouter.get("/:id", auth(UserRole.PROVIDER), validate({ params: orderParamsSchema }), orderController.getProviderOrderById);
 providerRouter.patch("/:id", auth(UserRole.PROVIDER), validate({ params: orderParamsSchema, body: updateOrderStatusSchema }), orderController.updateOrderStatus);
 
 export const orderRouter = customerRouter;

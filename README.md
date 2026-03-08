@@ -91,24 +91,70 @@ Make sure you have installed on your local machine:
    npm run dev
    ```
 
-   The API will typically be accessible at `http://localhost:3000` (or as configured in your `.env`).
+   The API will typically be accessible at `http://localhost:5000` (or as configured via `PORT` in your `.env`).
 
 ---
 
-## 🔐 Default Admin Credentials
+## 🔐 Default Login Credentials
 
-To quickly test administrative features, the project includes a seed script to generate a default admin user.
-
-Run the seed script **while the development server is running**:
+Seed scripts create default users for testing. **The API server must be running first** (otherwise you'll get `ECONNREFUSED`).
 
 ```bash
-npm run seed:admin
+# Start the API server (in one terminal)
+npm run dev
+
+# Then run seeds (in another terminal)
+# Option A: Reset and create ALL users (admin + customer + providers) - use this if credentials don't work
+npm run seed
+
+# Option B: Run seeds separately
+npm run seed:admin    # Create admin first
+npm run seed:data     # Create customer, providers, categories, meals, orders
 ```
 
-**Admin Login Details:**
+To reset users when login fails ("Invalid password"):
 
-- **Email:** `admin@foodhub.com`
-- **Password:** `admin1234`
+```bash
+# Reset ALL users (admin + customer + providers) - recommended
+npm run seed
+
+# Or reset individually:
+npm run seed:admin -- --reset   # Admin only
+npm run seed:data -- --reset    # Customer and providers only
+```
+
+| Role     | Email                | Password    |
+| -------- | -------------------- | ----------- |
+| Admin    | admin@foodhub.com    | admin1234   |
+| Customer | customer@foodhub.com | customer123 |
+| Provider | maria@foodhub.com    | provider123 |
+| Provider | joe@foodhub.com      | provider123 |
+
+### Troubleshooting: Login not working from frontend
+
+1. **Set environment variables** so the frontend can reach the API and auth works:
+
+   **Client** (`client/code/.env`):
+
+   ```
+   NEXT_PUBLIC_API_URL=http://localhost:5000
+   ```
+
+   ⚠️ **Important:** The port must match your API server (default 5000). If your client `.env` has `5001` or another port, login will fail.
+
+   **API** (`api/code/.env`):
+
+   ```
+   PORT=5000
+   BETTER_AUTH_URL=http://localhost:5000
+   APP_URL=http://localhost:3000
+   ```
+
+2. **Start both servers** – API on port 5000, client on port 3000.
+
+3. **Run seeds with the API running** – `seed:admin` then `seed:data`.
+
+4. If you still get "Invalid password", run `npm run seed` to reset and recreate all users with correct credentials.
 
 ---
 
